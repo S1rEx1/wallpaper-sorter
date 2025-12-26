@@ -3,19 +3,27 @@ from palettes import THEMES
 from PIL import Image
 from utils import hex_to_rgb, color_distance
 import sys
+import argparse
 
 EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp') # yeah, it prolly may slow down tool a bit, but it is still better then trying to guess the txt theme
 
 
 def main():
-    target_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    parser = argparse.ArgumentParser(description="Sort wallpapers by color themes.")
+    parser.add_argument("path", nargs="?", default=".", help="Path to the images directory.")
+    parser.add_argument("-u", "--untag", action="store_true", help="Remove theme tags from filenames.")
     
-    if os.path.isdir(target_dir):
-        process_directory(target_dir)
-        print("les go, ur welcome")
-    else:
-        print(f"erore: {target_dir} is not a valid directory.")
+    args = parser.parse_args()
 
+    if not os.path.isdir(args.path):
+        print(f"Error: {args.path} is not a directory.")
+        return
+
+    if args.untag:
+        remove_tags(args.path)
+    else:
+        process_directory(args.path)
+    print("Done!")
 
 def get_dominant_color(image_path: str) -> tuple:
     """
@@ -79,6 +87,20 @@ def process_directory(directory_path: str):
             
             os.rename(file_path, new_path)
             print(f"renamed {filename} -> {new_filename}")
+
+def remove_tags(directory_path: str):
+    """Removes theme prefixes from filenames."""
+    print("Untagging files")
+    for filename in os.listdir(directory_path):
+        for theme in THEMES:
+            prefix = f"{theme}_"
+            if filename.startswith(prefix):
+                new_name = filename[len(prefix):]
+                old_path = os.path.join(directory_path, filename)
+                new_path = os.path.join(directory_path, new_name)
+                os.rename(old_path, new_path)
+                print(f"Restored: {filename} -> {new_name}")
+                break
 
 if __name__ == "__main__":
     main()

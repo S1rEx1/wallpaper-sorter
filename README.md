@@ -10,15 +10,16 @@ An automated utility that analyzes the dominant colors of your wallpapers and re
 - **Color Analysis**: Uses K-Means inspired logic to find dominant colors.
 - **Theme Matching**: Calculates Euclidean distance between image colors and official theme palettes.
 - **Smart Renaming**: Prepends the theme name to the file (e.g., `wallpaper.jpg` -> `gruvbox_wallpaper.jpg`) and avoids double-renaming.
+- **Undo Functionality**: Easily remove theme tags from your filenames using the `-u` flag.
 
 ## 🎨 Supported Themes currently
 
 Currently, the utility recognizes:
-- **Gruvbox** 
-- **Catppuccin Mocha** 
-- **Nord** 
-- **Dracula** 
-- *Easily extensible via `palettes.py`*
+- **Gruvbox**, **Catppuccin Mocha**, **Nord**, **Dracula**
+- **Tokyo Night** (Deep blues and purples)
+- **Everforest** (Soft forest greens)
+- **Rose Pine** (Moody dusky colors)
+- **Kanagawa** (Traditional Japanese palette)
 
 ## 🛠️ Installation
 
@@ -44,10 +45,18 @@ pip install Pillow
 ```
 ## 📖 Usage
 
-Run the script by providing the path to your wallpapers directory:
+Tagging themes:
 
 ```Bash
 python main.py /path/to/your/wallpapers
+```
+Untagging themes:
+```Bash
+python main.py /path/to/wallpapers -u
+```
+Help:
+```Bash
+python main.py --help
 ```
 
 If no path is provided, it will scan the **current directory**.
