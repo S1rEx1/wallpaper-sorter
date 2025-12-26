@@ -1,17 +1,20 @@
 import os
 from palettes import THEMES
 from PIL import Image
-from utils import hex_to_rgb
+from utils import hex_to_rgb, color_distance
 
 
 def main():
-    print("---- IUSEARCHBTW theme sorter ----")
-    print("loading,,,,,,,,,,,,,,,")  # why does everyone use '.'? comma is funnier,,,
-    for theme, colors in THEMES.items():
-        rgb_colors = [hex_to_rgb(c) for c in colors]
-        print(f'themme "{theme}" loaded with {len(rgb_colors)} reference colors')
-
-    # TODO: scanning loop (zalup)
+    test_image = "test.jpg"
+    if os.path.exists(test_image):
+        dom_color = get_dominant_color(test_image)
+        if dom_color:
+            theme = match_theme(dom_color)
+            print(f"Image: {test_image}")
+            print(f"Dominant RGB: {dom_color}")
+            print(f"The theme: {theme}")
+    else:
+        print("erore")
 
 
 def get_dominant_color(image_path: str) -> tuple:
@@ -39,6 +42,29 @@ def get_dominant_color(image_path: str) -> tuple:
         print(f"erore processing {image_path}: {e}")
         return None
 
+def match_theme(dominant_color: tuple) -> str:
+    """
+    Matches a given RGB color to the closest theme defined in THEMES
+    
+    Args:
+        dominant_color (tuple): (R, G, B) of the image
+        
+    Returns:
+        str: The name of the matching theme
+    """
+    best_match = None
+    min_distance = float('inf')
+
+    for theme_name, hex_colors in THEMES.items():
+        for hex_color in hex_colors:
+            theme_rgb = hex_to_rgb(hex_color)
+            distance = color_distance(dominant_color, theme_rgb)
+            
+            if distance < min_distance:
+                min_distance = distance
+                best_match = theme_name
+                
+    return best_match
 
 if __name__ == "__main__":
     main()
