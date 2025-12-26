@@ -63,15 +63,14 @@ If no path is provided, it will scan the **current directory**.
 
 ## 🧠 How it works
 
-1. **Downscaling**: The image is resized to 150x150 pixels to ensure high performance without losing color context.
-    
-2. **Dominant Color Extraction**: The script identifies the most frequent pixel color in the image.
-    
-3. Distance Calculation: It measures the "distance" between the image's dominant color and the predefined HEX values in palettes.py using the Euclidean distance formula:
-    
-    $d = \sqrt{(r_2-r_1)^2 + (g_2-g_1)^2 + (b_2-b_1)^2}$
-    
-4. **Classification**: The image is assigned the theme with the smallest color distance.
+1. **Quantization**: The image is downscaled and quantized to extract the top 5 dominant colors.
+2. **LAB Conversion**: Colors are converted from RGB to **CIELAB** space, which is designed to be perceptually uniform.
+3. **Vibrancy Check**: Each color is analyzed for saturation and brightness. Vibrant "accent" colors receive a **2.0x weight**, while dull or near-neutral colors receive a **0.5x weight**.
+4. **Scoring**: 
+   - For each extracted color, the script finds the closest match among all defined themes.
+   - The theme associated with the match receives points based on the color's weight.
+   - The theme with the highest total score wins.
+5. **Renaming**: The winning theme name is prepended to the filename.
     
 ## ⚙️ Configuration
 
