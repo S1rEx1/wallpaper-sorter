@@ -5,7 +5,7 @@ import sys
 from PIL import Image
 
 from palettes import THEMES
-from utils import color_distance, hex_to_rgb, lab_distance, rgb_to_lab
+from utils import color_distance, hex_to_rgb, is_vibrant, lab_distance, rgb_to_lab
 
 EXTENSIONS = (
     ".jpg",
@@ -42,7 +42,6 @@ def get_dominant_color(image_path: str) -> tuple:
         with Image.open(image_path) as img:
             img = img.convert("RGB")
 
-            # not to fuck your hardware we gonna make the image smaller(who are 'we'?)
             img = img.resize((150, 150))
             colors = img.getcolors(maxcolors=150 * 150)
             if not colors:
@@ -55,71 +54,91 @@ def get_dominant_color(image_path: str) -> tuple:
         return None
 
 
-# def match_theme(dominant_color: tuple) -> str:
-#     """
-#     Matches a given RGB color to the closest theme defined in THEMES
-#     """
-#     best_match = None
-#     min_distance = float('inf')
 
-#     for theme_name, hex_colors in THEMES.items():
-#         for hex_color in hex_colors:
-#             theme_rgb = hex_to_rgb(hex_color)
-#             distance = color_distance(dominant_color, theme_rgb)
+def get_palette(image_path: str, count=5) -> list:
+    """
+    Extracts a palette of dominant colors from the image.
+    """
+    try:
+        with Image.open(image_path) as img:
+            img = img.convert("RGB")
+            img = img.resize((150, 150))
 
-#             if distance < min_distance:
-#                 min_distance = distance
-#                 best_match = theme_name
+            paletted = img.quantize(colors=count).convert("RGB")
+            colors = paletted.getcolors()
 
-#     return best_match
+            return [c[1] for c in colors]
+    except Exception as e:
+        print(f"Error extracting palette: {e}")
+        return []
 
 
-def match_theme(dominant_color_rgb: tuple) -> str:
-    """Matches a color to a theme using the LAB color space for better accuracy."""
-    best_match = None
-    min_distance = float("inf")
+def match_theme(image_palette: list) -> str:
+    """
+    Advanced scoring system to find the best theme match.
+    """
+    scores = {theme: 0 for theme in THEMES}
 
-    # Convert dominant color to LAB once
-    dom_lab = rgb_to_lab(dominant_color_rgb)
+    for color_rgb in image_palette:
+        weight = 2.0 if is_vibrant(color_rgb) else 0.5
 
-    for theme_name, hex_colors in THEMES.items():
-        for hex_color in hex_colors:
-            theme_rgb = hex_to_rgb(hex_color)
-            theme_lab = rgb_to_lab(theme_rgb)  # In production, pre-calculate this!
+        color_lab = rgb_to_lab(color_rgb)
 
-            distance = lab_distance(dom_lab, theme_lab)
+        best_theme = None
+        min_dist = float("inf")
 
-            if distance < min_distance:
-                min_distance = distance
-                best_match = theme_name
+        for theme_name, hex_colors in THEMES.items():
+            for hex_color in hex_colors:
+                theme_lab = rgb_to_lab(hex_to_rgb(hex_color))
+                dist = lab_distance(color_lab, theme_lab)
 
-    return best_match
+                if dist < min_dist:
+                    min_dist = dist
+                    best_theme = theme_name
+
+        if best_theme:
+            scores[best_theme] += weight
+
+    return max(scores, key=scores.get)
 
 
 def process_directory(directory_path: str):
     """
-    Scans the directory and renames images based on themes
+    Scans the directory and renames images using weighted palette analysis.
     """
+    print(f"Analyzing images in: {directory_path}")
+    
+    files = [f for f in os.listdir(directory_path) if f.lower().endswith(EXTENSIONS)]
+    
+    if not files:
+        print("No supported images found.")
+        return
 
-    print(f"dont look behing urself, scanning {directory_path}")
-
-    for filename in os.listdir(directory_path):
-        file_path = os.path.join(directory_path, filename)
-
+    for filename in files:
         if any(filename.startswith(f"{theme}_") for theme in THEMES):
-            print(f"skippink {filename} (already categorized)")
             continue
 
-        dominant_rgb = get_dominant_color(file_path)
+        file_path = os.path.join(directory_path, filename)
+        
+        try:
+            palette = get_palette(file_path, count=5)
+            
+            if not palette:
+                print(f"Skipping {filename}: Could not extract colors.")
+                continue
 
-        if dominant_rgb:
-            theme = match_theme(dominant_rgb)
-            new_filename = f"{theme}_{filename}"
-            new_path = os.path.join(directory_path, new_filename)
-
+            theme = match_theme(palette)
+            
+            new_name = f"{theme}_{filename}"
+            new_path = os.path.join(directory_path, new_name)
+            
             os.rename(file_path, new_path)
-            print(f"renamed {filename} -> {new_filename}")
+            print(f"Tagged: [{theme.upper()}] -> {filename}")
+            
+        except Exception as e:
+            print(f"Failed to process {filename}: {e}")
 
+    print("\nProcessing complete!")
 
 def remove_tags(directory_path: str):
     """Removes theme prefixes from filenames."""

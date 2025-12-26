@@ -15,7 +15,6 @@ def hex_to_rgb(hex_color: str) -> tuple:
     hex_color = hex_color.lstrip("#")
     return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
-
 def rgb_to_lab(rgb: tuple) -> tuple:
     """
     Converts an RGB color tuple to the LAB color space.
@@ -32,7 +31,7 @@ def rgb_to_lab(rgb: tuple) -> tuple:
     z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883
 
     def f(t):
-        return t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+        return t ** (1/3) if t > 0.008856 else 7.787 * t + 16/116
 
     l = 116 * f(y) - 16
     a = 500 * (f(x) - f(y))
@@ -40,11 +39,26 @@ def rgb_to_lab(rgb: tuple) -> tuple:
 
     return (l, a, b_lab)
 
+def is_vibrant(rgb: tuple) -> bool:
+    """
+    Checks if a color is vibrant enough to be an accent.
+    Filters out pure black, pure white, and dull grays.
+    """
+    r, g, b = rgb
+    max_c = max(rgb)
+    min_c = min(rgb)
+    sat = (max_c - min_c) / 255.0 if max_c != 0 else 0
+    
+    brightness = sum(rgb) / 3
+    
+    # Ignore very dark (<15%), very bright (>90%), and very gray (<15% saturation)
+    if brightness < 40 or brightness > 230 or sat < 0.15:
+        return False
+    return True
 
 def lab_distance(lab1: tuple, lab2: tuple) -> float:
     """Calculates Euclidean distance in LAB space (Delta E)."""
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(lab1, lab2)))
-
 
 def color_distance(color1: tuple, color2: tuple) -> float:
     """
