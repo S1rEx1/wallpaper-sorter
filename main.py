@@ -1,18 +1,25 @@
-import os
-from palettes import THEMES
-from PIL import Image
-from utils import hex_to_rgb, color_distance
-import sys
 import argparse
+import os
+import sys
 
-EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp') # yeah, it prolly may slow down tool a bit, but it is still better then trying to guess the txt theme
+from PIL import Image
+
+from palettes import THEMES
+from utils import color_distance, hex_to_rgb, lab_distance, rgb_to_lab
+
+EXTENSIONS = (
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+)  # yeah, it prolly may slow down tool a bit, but it is still better then trying to guess the txt theme
 
 
 def main():
     parser = argparse.ArgumentParser(description="Sort wallpapers by color themes.")
     parser.add_argument("path", nargs="?", default=".", help="Path to the images directory.")
     parser.add_argument("-u", "--untag", action="store_true", help="Remove theme tags from filenames.")
-    
+
     args = parser.parse_args()
 
     if not os.path.isdir(args.path):
@@ -24,6 +31,7 @@ def main():
     else:
         process_directory(args.path)
     print("Done!")
+
 
 def get_dominant_color(image_path: str) -> tuple:
     """
@@ -46,30 +54,54 @@ def get_dominant_color(image_path: str) -> tuple:
         print(f"erore processing {image_path}: {e}")
         return None
 
-def match_theme(dominant_color: tuple) -> str:
-    """
-    Matches a given RGB color to the closest theme defined in THEMES
-    """
+
+# def match_theme(dominant_color: tuple) -> str:
+#     """
+#     Matches a given RGB color to the closest theme defined in THEMES
+#     """
+#     best_match = None
+#     min_distance = float('inf')
+
+#     for theme_name, hex_colors in THEMES.items():
+#         for hex_color in hex_colors:
+#             theme_rgb = hex_to_rgb(hex_color)
+#             distance = color_distance(dominant_color, theme_rgb)
+
+#             if distance < min_distance:
+#                 min_distance = distance
+#                 best_match = theme_name
+
+#     return best_match
+
+
+def match_theme(dominant_color_rgb: tuple) -> str:
+    """Matches a color to a theme using the LAB color space for better accuracy."""
     best_match = None
-    min_distance = float('inf')
+    min_distance = float("inf")
+
+    # Convert dominant color to LAB once
+    dom_lab = rgb_to_lab(dominant_color_rgb)
 
     for theme_name, hex_colors in THEMES.items():
         for hex_color in hex_colors:
             theme_rgb = hex_to_rgb(hex_color)
-            distance = color_distance(dominant_color, theme_rgb)
-            
+            theme_lab = rgb_to_lab(theme_rgb)  # In production, pre-calculate this!
+
+            distance = lab_distance(dom_lab, theme_lab)
+
             if distance < min_distance:
                 min_distance = distance
                 best_match = theme_name
-                
+
     return best_match
+
 
 def process_directory(directory_path: str):
     """
     Scans the directory and renames images based on themes
     """
 
-    print(f'dont look behing urself, scanning {directory_path}')
+    print(f"dont look behing urself, scanning {directory_path}")
 
     for filename in os.listdir(directory_path):
         file_path = os.path.join(directory_path, filename)
@@ -84,9 +116,10 @@ def process_directory(directory_path: str):
             theme = match_theme(dominant_rgb)
             new_filename = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_filename)
-            
+
             os.rename(file_path, new_path)
             print(f"renamed {filename} -> {new_filename}")
+
 
 def remove_tags(directory_path: str):
     """Removes theme prefixes from filenames."""
@@ -95,12 +128,13 @@ def remove_tags(directory_path: str):
         for theme in THEMES:
             prefix = f"{theme}_"
             if filename.startswith(prefix):
-                new_name = filename[len(prefix):]
+                new_name = filename[len(prefix) :]
                 old_path = os.path.join(directory_path, filename)
                 new_path = os.path.join(directory_path, new_name)
                 os.rename(old_path, new_path)
                 print(f"Restored: {filename} -> {new_name}")
                 break
+
 
 if __name__ == "__main__":
     main()
