@@ -51,7 +51,7 @@ def main():
     parser.add_argument("--kmeans-iterations", type=int, default=10,
                         help="Number of iterations for K-means algorithm (default: 10)")
     parser.add_argument("--min-pixel-ratio", type=float, default=0.01,
-                        help="Minimum pixel ratio for a color to be considered (default: 0.01 = 1%)")
+                        help="Minimum pixel ratio for a color to be considered (default: 0.01 equals 1%)")
 
     args = parser.parse_args()
 
