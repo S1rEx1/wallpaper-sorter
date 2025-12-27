@@ -90,6 +90,11 @@ Select color space:
 python main.py /path/to/your/wallpapers --color-space rgb  # Use RGB color space for comparison (default: lab)
 ```
 
+Configure K-means iterations:
+```Bash
+python main.py /path/to/your/wallpapers --kmeans-iterations 20  # Set number of K-means iterations (default: 10)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
