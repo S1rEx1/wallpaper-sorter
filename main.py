@@ -3,6 +3,8 @@ import os
 import sys
 
 from PIL import Image
+from sklearn.cluster import KMeans
+import numpy as np
 
 from palettes import THEMES
 from utils import color_distance, hex_to_rgb, is_vibrant, lab_distance, rgb_to_lab
