@@ -165,22 +165,23 @@ def process_directory(directory_path: str):
             continue
 
         file_path = os.path.join(directory_path, filename)
-        
+
         try:
-            palette = get_palette(file_path, count=5)
-            
-            if not palette:
+            # Use K-means for better color extraction
+            palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=5)
+
+            if not palette_with_counts:
                 print(f"Skipping {filename}: Could not extract colors.")
                 continue
 
-            theme = match_theme(palette)
-            
+            theme = match_theme(palette_with_counts)
+
             new_name = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_name)
-            
+
             os.rename(file_path, new_path)
             print(f"Tagged: [{theme.upper()}] -> {filename}")
-            
+
         except Exception as e:
             print(f"Failed to process {filename}: {e}")
 
