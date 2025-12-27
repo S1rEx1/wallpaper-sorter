@@ -70,6 +70,11 @@ Specify number of clusters (for K-means algorithm):
 python main.py /path/to/your/wallpapers --clusters 7  # Use 7 clusters for K-means (default: 5)
 ```
 
+Configure color weights:
+```Bash
+python main.py /path/to/your/wallpapers --vibrant-weight 3.0 --dull-weight 0.3  # Customize color weights (defaults: 2.0 and 0.5)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
