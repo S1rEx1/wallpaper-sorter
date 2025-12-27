@@ -25,6 +25,10 @@ def main():
                         help="Color extraction algorithm to use: kmeans (default) or quantize")
     parser.add_argument("--clusters", type=int, default=5,
                         help="Number of clusters for K-means algorithm (default: 5)")
+    parser.add_argument("--vibrant-weight", type=float, default=2.0,
+                        help="Weight for vibrant colors (default: 2.0)")
+    parser.add_argument("--dull-weight", type=float, default=0.5,
+                        help="Weight for dull colors (default: 0.5)")
 
     args = parser.parse_args()
 
@@ -35,7 +39,7 @@ def main():
     if args.untag:
         remove_tags(args.path)
     else:
-        process_directory(args.path, args.algorithm, args.clusters)
+        process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight)
     print("Done!")
 
 
@@ -106,7 +110,7 @@ def get_palette(image_path: str, count=5) -> list:
         return []
 
 
-def match_theme(image_palette: list) -> str:
+def match_theme(image_palette: list, vibrant_weight_val=2.0, dull_weight_val=0.5) -> str:
     """
     Advanced scoring system to find the best theme match using K-means results.
     """
@@ -115,7 +119,7 @@ def match_theme(image_palette: list) -> str:
     total_pixels = sum([count for _, count in image_palette]) if image_palette else 1
 
     for color_rgb, pixel_count in image_palette:
-        vibrant_weight = 2.0 if is_vibrant(color_rgb) else 0.5
+        vibrant_weight = vibrant_weight_val if is_vibrant(color_rgb) else dull_weight_val
         pixel_percentage = pixel_count / total_pixels
         weight = vibrant_weight * pixel_percentage
 
@@ -139,7 +143,7 @@ def match_theme(image_palette: list) -> str:
     return max(scores, key=scores.get)
 
 
-def process_directory(directory_path: str, algorithm="kmeans", clusters=5):
+def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -160,13 +164,13 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5):
         try:
             if algorithm == "kmeans":
                 palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters)
-                theme = match_theme(palette_with_counts)
+                theme = match_theme(palette_with_counts, vibrant_weight, dull_weight)
             else:  # quantize
                 palette = get_palette(file_path, count=clusters)
                 if not palette:
                     print(f"Skipping {filename}: Could not extract colors.")
                     continue
-                theme = match_theme([(color, 1) for color in palette])  # Simple counts for quantize
+                theme = match_theme([(color, 1) for color in palette], vibrant_weight, dull_weight)  # Simple counts for quantize
 
             new_name = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_name)
