@@ -80,6 +80,11 @@ Configure color sensitivity:
 python main.py /path/to/your/wallpapers --saturation-threshold 0.2 --brightness-low 50 --brightness-high 200  # Customize sensitivity (defaults: 0.15, 40, 230)
 ```
 
+Save analysis log:
+```Bash
+python main.py /path/to/your/wallpapers --log analysis.log  # Save analysis log to file
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
