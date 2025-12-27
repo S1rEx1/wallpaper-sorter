@@ -21,6 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description="Sort wallpapers by color themes.")
     parser.add_argument("path", nargs="?", default=".", help="Path to the images directory.")
     parser.add_argument("-u", "--untag", action="store_true", help="Remove theme tags from filenames.")
+    parser.add_argument("--algorithm", choices=["kmeans", "quantize"], default="kmeans",
+                        help="Color extraction algorithm to use: kmeans (default) or quantize")
 
     args = parser.parse_args()
 
@@ -31,7 +33,7 @@ def main():
     if args.untag:
         remove_tags(args.path)
     else:
-        process_directory(args.path)
+        process_directory(args.path, args.algorithm)
     print("Done!")
 
 
@@ -135,14 +137,14 @@ def match_theme(image_palette: list) -> str:
     return max(scores, key=scores.get)
 
 
-def process_directory(directory_path: str):
+def process_directory(directory_path: str, algorithm="kmeans"):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
-    print(f"Analyzing images in: {directory_path}")
-    
+    print(f"Analyzing images in: {directory_path} using {algorithm} algorithm")
+
     files = [f for f in os.listdir(directory_path) if f.lower().endswith(EXTENSIONS)]
-    
+
     if not files:
         print("No supported images found.")
         return
@@ -154,14 +156,15 @@ def process_directory(directory_path: str):
         file_path = os.path.join(directory_path, filename)
 
         try:
-            # Use K-means for better color extraction
-            palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=5)
-
-            if not palette_with_counts:
-                print(f"Skipping {filename}: Could not extract colors.")
-                continue
-
-            theme = match_theme(palette_with_counts)
+            if algorithm == "kmeans":
+                palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=5)
+                theme = match_theme(palette_with_counts)
+            else:  # quantize
+                palette = get_palette(file_path, count=5)
+                if not palette:
+                    print(f"Skipping {filename}: Could not extract colors.")
+                    continue
+                theme = match_theme([(color, 1) for color in palette])  # Simple counts for quantize
 
             new_name = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_name)
