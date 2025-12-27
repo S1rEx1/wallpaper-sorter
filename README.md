@@ -65,6 +65,11 @@ python main.py /path/to/your/wallpapers --algorithm kmeans    # Use K-means (def
 python main.py /path/to/your/wallpapers --algorithm quantize  # Use quantization (old algorithm)
 ```
 
+Specify number of clusters (for K-means algorithm):
+```Bash
+python main.py /path/to/your/wallpapers --clusters 7  # Use 7 clusters for K-means (default: 5)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
