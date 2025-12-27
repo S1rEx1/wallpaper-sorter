@@ -45,6 +45,7 @@ def main():
                         help="Lower brightness threshold (default: 40)")
     parser.add_argument("--brightness-high", type=float, default=230,
                         help="Higher brightness threshold (default: 230)")
+    parser.add_argument("--log", type=str, help="Path to save analysis log file")
 
     args = parser.parse_args()
 
@@ -55,7 +56,8 @@ def main():
     if args.untag:
         remove_tags(args.path)
     else:
-        process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight)
+        process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight,
+                         args.saturation_threshold, args.brightness_low, args.brightness_high, args.log)
     print("Done!")
 
 
@@ -161,7 +163,7 @@ def match_theme(image_palette: list, config: 'AlgorithmConfig') -> str:
 
 
 def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5,
-                     saturation_threshold=0.15, brightness_low=40, brightness_high=230):
+                     saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -175,6 +177,7 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
         print("No supported images found.")
         return
 
+    log_content = []
     for filename in files:
         if any(filename.startswith(f"{theme}_") for theme in THEMES):
             continue
@@ -196,10 +199,22 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
             new_path = os.path.join(directory_path, new_name)
 
             os.rename(file_path, new_path)
-            print(f"Tagged: [{theme.upper()}] -> {filename}")
+            message = f"Tagged: [{theme.upper()}] -> {filename}"
+            print(message)
+
+            # Store for log
+            log_content.append(message)
 
         except Exception as e:
-            print(f"Failed to process {filename}: {e}")
+            message = f"Failed to process {filename}: {e}"
+            print(message)
+            log_content.append(message)
+
+    # Write log if path provided
+    if log_path:
+        with open(log_path, 'w') as log_file:
+            log_file.write("\n".join(log_content))
+        print(f"Log saved to: {log_path}")
 
     print("\nProcessing complete!")
 
