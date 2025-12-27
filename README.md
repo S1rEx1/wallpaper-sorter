@@ -75,6 +75,11 @@ Configure color weights:
 python main.py /path/to/your/wallpapers --vibrant-weight 3.0 --dull-weight 0.3  # Customize color weights (defaults: 2.0 and 0.5)
 ```
 
+Configure color sensitivity:
+```Bash
+python main.py /path/to/your/wallpapers --saturation-threshold 0.2 --brightness-low 50 --brightness-high 200  # Customize sensitivity (defaults: 0.15, 40, 230)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
