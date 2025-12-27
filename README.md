@@ -85,6 +85,11 @@ Save analysis log:
 python main.py /path/to/your/wallpapers --log analysis.log  # Save analysis log to file
 ```
 
+Select color space:
+```Bash
+python main.py /path/to/your/wallpapers --color-space rgb  # Use RGB color space for comparison (default: lab)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
