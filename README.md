@@ -61,6 +61,7 @@ python main.py --help
 
 If no path is provided, it will scan the **current directory**.
 
+
 ## 🧠 How it works
 
 1. **Quantization**: The image is downscaled and quantized to extract the top 5 dominant colors.
