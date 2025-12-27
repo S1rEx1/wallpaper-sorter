@@ -57,34 +57,26 @@ def get_dominant_color(image_path: str) -> tuple:
 def get_dominant_colors_kmeans(image_path: str, n_colors=5) -> list:
     """
     Extracts dominant colors from the image using K-means clustering.
-    Returns a list of (color_rgb, count) tuples where count represents
-    the relative dominance of the color in the image.
     """
     try:
         with Image.open(image_path) as img:
             img = img.convert("RGB")
-            # Resize to smaller image to speed up processing
             img = img.resize((150, 150))
 
-            # Convert image to numpy array and reshape for K-means
             img_array = np.array(img)
             height, width, channels = img_array.shape
             reshaped_img = img_array.reshape((height * width, channels))
 
-            # Apply K-means clustering
             kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
             kmeans.fit(reshaped_img)
 
-            # Get the cluster centers (dominant colors) and labels
             colors = kmeans.cluster_centers_.astype(int)
             labels = kmeans.labels_
 
-            # Count how many pixels belong to each cluster
             unique, counts = np.unique(labels, return_counts=True)
 
-            # Create a list of (color, count) tuples sorted by dominance
             color_count_pairs = [(tuple(color), count) for color, count in zip(colors, counts)]
-            color_count_pairs.sort(key=lambda x: x[1], reverse=True)  # Sort by count (dominance)
+            color_count_pairs.sort(key=lambda x: x[1], reverse=True)
 
             return color_count_pairs
     except Exception as e:
