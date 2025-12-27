@@ -23,6 +23,8 @@ def main():
     parser.add_argument("-u", "--untag", action="store_true", help="Remove theme tags from filenames.")
     parser.add_argument("--algorithm", choices=["kmeans", "quantize"], default="kmeans",
                         help="Color extraction algorithm to use: kmeans (default) or quantize")
+    parser.add_argument("--clusters", type=int, default=5,
+                        help="Number of clusters for K-means algorithm (default: 5)")
 
     args = parser.parse_args()
 
@@ -33,7 +35,7 @@ def main():
     if args.untag:
         remove_tags(args.path)
     else:
-        process_directory(args.path, args.algorithm)
+        process_directory(args.path, args.algorithm, args.clusters)
     print("Done!")
 
 
@@ -137,7 +139,7 @@ def match_theme(image_palette: list) -> str:
     return max(scores, key=scores.get)
 
 
-def process_directory(directory_path: str, algorithm="kmeans"):
+def process_directory(directory_path: str, algorithm="kmeans", clusters=5):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -157,10 +159,10 @@ def process_directory(directory_path: str, algorithm="kmeans"):
 
         try:
             if algorithm == "kmeans":
-                palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=5)
+                palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters)
                 theme = match_theme(palette_with_counts)
             else:  # quantize
-                palette = get_palette(file_path, count=5)
+                palette = get_palette(file_path, count=clusters)
                 if not palette:
                     print(f"Skipping {filename}: Could not extract colors.")
                     continue
