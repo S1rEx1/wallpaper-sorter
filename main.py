@@ -37,22 +37,19 @@ def main():
 
 def get_dominant_color(image_path: str) -> tuple:
     """
-    Opens an image and finds the main color
+    Opens an image and finds the main color using K-means
     """
 
     try:
-        with Image.open(image_path) as img:
-            img = img.convert("RGB")
-
-            img = img.resize((150, 150))
-            colors = img.getcolors(maxcolors=150 * 150)
-            if not colors:
-                return None
-            most_frequent = sorted(colors, key=lambda x: x[0], reverse=True)[0]
-            return most_frequent[1]
+        # Use the K-means function to get dominant colors with counts
+        palette_with_counts = get_dominant_colors_kmeans(image_path, n_colors=1)
+        if not palette_with_counts:
+            return None
+        # Return the most dominant color
+        return palette_with_counts[0][0]  # Get the RGB tuple of the most dominant color
 
     except Exception as e:
-        print(f"erore processing {image_path}: {e}")
+        print(f"error processing {image_path}: {e}")
         return None
 
 
