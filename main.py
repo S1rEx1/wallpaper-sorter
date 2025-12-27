@@ -50,6 +50,8 @@ def main():
                         help="Color space for distance calculation: lab (default) or rgb")
     parser.add_argument("--kmeans-iterations", type=int, default=10,
                         help="Number of iterations for K-means algorithm (default: 10)")
+    parser.add_argument("--min-pixel-ratio", type=float, default=0.01,
+                        help="Minimum pixel ratio for a color to be considered (default: 0.01 = 1%)")
 
     args = parser.parse_args()
 
@@ -62,7 +64,7 @@ def main():
     else:
         process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight,
                          args.saturation_threshold, args.brightness_low, args.brightness_high, args.log,
-                         args.color_space, args.kmeans_iterations)
+                         args.color_space, args.kmeans_iterations, args.min_pixel_ratio)
     print("Done!")
 
 
@@ -173,7 +175,7 @@ def match_theme(image_palette: list, config: 'AlgorithmConfig', color_space="lab
 
 def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5,
                      saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None, color_space="lab",
-                     kmeans_iterations=10):
+                     kmeans_iterations=10, min_pixel_ratio=0.01):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -197,7 +199,11 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
         try:
             if algorithm == "kmeans":
                 palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters, n_init=kmeans_iterations)
-                theme = match_theme(palette_with_counts, config, color_space)
+                # Filter colors that don't meet the minimum pixel ratio
+                total_pixels = sum([count for _, count in palette_with_counts]) if palette_with_counts else 1
+                filtered_palette = [(color, count) for color, count in palette_with_counts
+                                   if count / total_pixels >= min_pixel_ratio]
+                theme = match_theme(filtered_palette, config, color_space)
             else:  # quantize
                 palette = get_palette(file_path, count=clusters)
                 if not palette:
