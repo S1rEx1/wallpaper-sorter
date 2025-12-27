@@ -59,6 +59,12 @@ Help:
 python main.py --help
 ```
 
+Specify algorithm:
+```Bash
+python main.py /path/to/your/wallpapers --algorithm kmeans    # Use K-means (default)
+python main.py /path/to/your/wallpapers --algorithm quantize  # Use quantization (old algorithm)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
