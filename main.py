@@ -115,12 +115,18 @@ def get_palette(image_path: str, count=5) -> list:
 
 def match_theme(image_palette: list) -> str:
     """
-    Advanced scoring system to find the best theme match.
+    Advanced scoring system to find the best theme match using K-means results.
     """
     scores = {theme: 0 for theme in THEMES}
 
-    for color_rgb in image_palette:
-        weight = 2.0 if is_vibrant(color_rgb) else 0.5
+    # Calculate total pixel count for percentage calculation
+    total_pixels = sum([count for _, count in image_palette]) if image_palette else 1
+
+    for color_rgb, pixel_count in image_palette:
+        # Calculate weight based on both vibrancy and pixel percentage
+        vibrant_weight = 2.0 if is_vibrant(color_rgb) else 0.5
+        pixel_percentage = pixel_count / total_pixels
+        weight = vibrant_weight * pixel_percentage
 
         color_lab = rgb_to_lab(color_rgb)
 
