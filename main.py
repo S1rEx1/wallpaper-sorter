@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--brightness-high", type=float, default=230,
                         help="Higher brightness threshold (default: 230)")
     parser.add_argument("--log", type=str, help="Path to save analysis log file")
+    parser.add_argument("--color-space", choices=["lab", "rgb"], default="lab",
+                        help="Color space for distance calculation: lab (default) or rgb")
 
     args = parser.parse_args()
 
@@ -57,7 +59,7 @@ def main():
         remove_tags(args.path)
     else:
         process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight,
-                         args.saturation_threshold, args.brightness_low, args.brightness_high, args.log)
+                         args.saturation_threshold, args.brightness_low, args.brightness_high, args.log, args.color_space)
     print("Done!")
 
 
@@ -128,7 +130,7 @@ def get_palette(image_path: str, count=5) -> list:
         return []
 
 
-def match_theme(image_palette: list, config: 'AlgorithmConfig') -> str:
+def match_theme(image_palette: list, config: 'AlgorithmConfig', color_space="lab") -> str:
     """
     Advanced scoring system to find the best theme match using K-means results.
     """
@@ -142,15 +144,19 @@ def match_theme(image_palette: list, config: 'AlgorithmConfig') -> str:
         pixel_percentage = pixel_count / total_pixels
         weight = vibrant_weight * pixel_percentage
 
-        color_lab = rgb_to_lab(color_rgb)
-
         best_theme = None
         min_dist = float("inf")
 
         for theme_name, hex_colors in THEMES.items():
             for hex_color in hex_colors:
-                theme_lab = rgb_to_lab(hex_to_rgb(hex_color))
-                dist = lab_distance(color_lab, theme_lab)
+                theme_rgb = hex_to_rgb(hex_color)
+
+                if color_space == "lab":
+                    color_lab = rgb_to_lab(color_rgb)
+                    theme_lab = rgb_to_lab(theme_rgb)
+                    dist = lab_distance(color_lab, theme_lab)
+                else:  # rgb
+                    dist = color_distance(color_rgb, theme_rgb)
 
                 if dist < min_dist:
                     min_dist = dist
@@ -163,7 +169,7 @@ def match_theme(image_palette: list, config: 'AlgorithmConfig') -> str:
 
 
 def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5,
-                     saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None):
+                     saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None, color_space="lab"):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -187,13 +193,13 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
         try:
             if algorithm == "kmeans":
                 palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters)
-                theme = match_theme(palette_with_counts, config)
+                theme = match_theme(palette_with_counts, config, color_space)
             else:  # quantize
                 palette = get_palette(file_path, count=clusters)
                 if not palette:
                     print(f"Skipping {filename}: Could not extract colors.")
                     continue
-                theme = match_theme([(color, 1) for color in palette], config)  # Simple counts for quantize
+                theme = match_theme([(color, 1) for color in palette], config, color_space)  # Simple counts for quantize
 
             new_name = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_name)
