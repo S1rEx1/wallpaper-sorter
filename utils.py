@@ -39,7 +39,7 @@ def rgb_to_lab(rgb: tuple) -> tuple:
 
     return (l, a, b_lab)
 
-def is_vibrant(rgb: tuple) -> bool:
+def is_vibrant(rgb: tuple, saturation_threshold=0.15, brightness_low=40, brightness_high=230) -> bool:
     """
     Checks if a color is vibrant enough to be an accent.
     Filters out pure black, pure white, and dull grays.
@@ -48,11 +48,10 @@ def is_vibrant(rgb: tuple) -> bool:
     max_c = max(rgb)
     min_c = min(rgb)
     sat = (max_c - min_c) / 255.0 if max_c != 0 else 0
-    
+
     brightness = sum(rgb) / 3
-    
-    # Ignore very dark (<15%), very bright (>90%), and very gray (<15% saturation)
-    if brightness < 40 or brightness > 230 or sat < 0.15:
+
+    if brightness < brightness_low or brightness > brightness_high or sat < saturation_threshold:
         return False
     return True
 

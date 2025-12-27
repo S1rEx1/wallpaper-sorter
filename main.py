@@ -9,6 +9,16 @@ import numpy as np
 from palettes import THEMES
 from utils import color_distance, hex_to_rgb, is_vibrant, lab_distance, rgb_to_lab
 
+
+class AlgorithmConfig:
+    def __init__(self, vibrant_weight=2.0, dull_weight=0.5,
+                 saturation_threshold=0.15, brightness_low=40, brightness_high=230):
+        self.vibrant_weight = vibrant_weight
+        self.dull_weight = dull_weight
+        self.saturation_threshold = saturation_threshold
+        self.brightness_low = brightness_low
+        self.brightness_high = brightness_high
+
 EXTENSIONS = (
     ".jpg",
     ".jpeg",
@@ -29,6 +39,12 @@ def main():
                         help="Weight for vibrant colors (default: 2.0)")
     parser.add_argument("--dull-weight", type=float, default=0.5,
                         help="Weight for dull colors (default: 0.5)")
+    parser.add_argument("--saturation-threshold", type=float, default=0.15,
+                        help="Saturation threshold for vibrant color detection (default: 0.15)")
+    parser.add_argument("--brightness-low", type=float, default=40,
+                        help="Lower brightness threshold (default: 40)")
+    parser.add_argument("--brightness-high", type=float, default=230,
+                        help="Higher brightness threshold (default: 230)")
 
     args = parser.parse_args()
 
@@ -110,7 +126,7 @@ def get_palette(image_path: str, count=5) -> list:
         return []
 
 
-def match_theme(image_palette: list, vibrant_weight_val=2.0, dull_weight_val=0.5) -> str:
+def match_theme(image_palette: list, config: 'AlgorithmConfig') -> str:
     """
     Advanced scoring system to find the best theme match using K-means results.
     """
@@ -119,7 +135,8 @@ def match_theme(image_palette: list, vibrant_weight_val=2.0, dull_weight_val=0.5
     total_pixels = sum([count for _, count in image_palette]) if image_palette else 1
 
     for color_rgb, pixel_count in image_palette:
-        vibrant_weight = vibrant_weight_val if is_vibrant(color_rgb) else dull_weight_val
+        vibrant_weight = config.vibrant_weight if is_vibrant(color_rgb,
+            config.saturation_threshold, config.brightness_low, config.brightness_high) else config.dull_weight
         pixel_percentage = pixel_count / total_pixels
         weight = vibrant_weight * pixel_percentage
 
@@ -143,11 +160,14 @@ def match_theme(image_palette: list, vibrant_weight_val=2.0, dull_weight_val=0.5
     return max(scores, key=scores.get)
 
 
-def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5):
+def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5,
+                     saturation_threshold=0.15, brightness_low=40, brightness_high=230):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
     print(f"Analyzing images in: {directory_path} using {algorithm} algorithm")
+
+    config = AlgorithmConfig(vibrant_weight, dull_weight, saturation_threshold, brightness_low, brightness_high)
 
     files = [f for f in os.listdir(directory_path) if f.lower().endswith(EXTENSIONS)]
 
@@ -164,13 +184,13 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
         try:
             if algorithm == "kmeans":
                 palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters)
-                theme = match_theme(palette_with_counts, vibrant_weight, dull_weight)
+                theme = match_theme(palette_with_counts, config)
             else:  # quantize
                 palette = get_palette(file_path, count=clusters)
                 if not palette:
                     print(f"Skipping {filename}: Could not extract colors.")
                     continue
-                theme = match_theme([(color, 1) for color in palette], vibrant_weight, dull_weight)  # Simple counts for quantize
+                theme = match_theme([(color, 1) for color in palette], config)  # Simple counts for quantize
 
             new_name = f"{theme}_{filename}"
             new_path = os.path.join(directory_path, new_name)
