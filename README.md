@@ -95,6 +95,11 @@ Configure K-means iterations:
 python main.py /path/to/your/wallpapers --kmeans-iterations 20  # Set number of K-means iterations (default: 10)
 ```
 
+Filter colors by minimum pixel ratio:
+```Bash
+python main.py /path/to/your/wallpapers --min-pixel-ratio 0.05  # Only consider colors that occupy at least 5% of pixels (default: 1%)
+```
+
 If no path is provided, it will scan the **current directory**.
 
 
