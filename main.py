@@ -108,11 +108,9 @@ def match_theme(image_palette: list) -> str:
     """
     scores = {theme: 0 for theme in THEMES}
 
-    # Calculate total pixel count for percentage calculation
     total_pixels = sum([count for _, count in image_palette]) if image_palette else 1
 
     for color_rgb, pixel_count in image_palette:
-        # Calculate weight based on both vibrancy and pixel percentage
         vibrant_weight = 2.0 if is_vibrant(color_rgb) else 0.5
         pixel_percentage = pixel_count / total_pixels
         weight = vibrant_weight * pixel_percentage
