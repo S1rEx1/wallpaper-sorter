@@ -48,6 +48,8 @@ def main():
     parser.add_argument("--log", type=str, help="Path to save analysis log file")
     parser.add_argument("--color-space", choices=["lab", "rgb"], default="lab",
                         help="Color space for distance calculation: lab (default) or rgb")
+    parser.add_argument("--kmeans-iterations", type=int, default=10,
+                        help="Number of iterations for K-means algorithm (default: 10)")
 
     args = parser.parse_args()
 
@@ -59,7 +61,8 @@ def main():
         remove_tags(args.path)
     else:
         process_directory(args.path, args.algorithm, args.clusters, args.vibrant_weight, args.dull_weight,
-                         args.saturation_threshold, args.brightness_low, args.brightness_high, args.log, args.color_space)
+                         args.saturation_threshold, args.brightness_low, args.brightness_high, args.log,
+                         args.color_space, args.kmeans_iterations)
     print("Done!")
 
 
@@ -82,7 +85,7 @@ def get_dominant_color(image_path: str) -> tuple:
 
 
 
-def get_dominant_colors_kmeans(image_path: str, n_colors=5) -> list:
+def get_dominant_colors_kmeans(image_path: str, n_colors=5, n_init=10) -> list:
     """
     Extracts dominant colors from the image using K-means clustering.
     """
@@ -95,7 +98,7 @@ def get_dominant_colors_kmeans(image_path: str, n_colors=5) -> list:
             height, width, channels = img_array.shape
             reshaped_img = img_array.reshape((height * width, channels))
 
-            kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
+            kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=n_init)
             kmeans.fit(reshaped_img)
 
             colors = kmeans.cluster_centers_.astype(int)
@@ -169,7 +172,8 @@ def match_theme(image_palette: list, config: 'AlgorithmConfig', color_space="lab
 
 
 def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibrant_weight=2.0, dull_weight=0.5,
-                     saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None, color_space="lab"):
+                     saturation_threshold=0.15, brightness_low=40, brightness_high=230, log_path=None, color_space="lab",
+                     kmeans_iterations=10):
     """
     Scans the directory and renames images using weighted palette analysis.
     """
@@ -192,7 +196,7 @@ def process_directory(directory_path: str, algorithm="kmeans", clusters=5, vibra
 
         try:
             if algorithm == "kmeans":
-                palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters)
+                palette_with_counts = get_dominant_colors_kmeans(file_path, n_colors=clusters, n_init=kmeans_iterations)
                 theme = match_theme(palette_with_counts, config, color_space)
             else:  # quantize
                 palette = get_palette(file_path, count=clusters)
